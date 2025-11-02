@@ -54,7 +54,6 @@
       if (!user) return alert('Please log in first.');
 
       try {
-        // Check if pass already exists for this name
         const existingQuery = query(collection(db, 'passes'), where('ownerName', '==', ownerName));
         const existingDocs = await getDocs(existingQuery);
         if (!existingDocs.empty) {
@@ -73,12 +72,13 @@
           createdAt: serverTimestamp()
         });
 
-        const url = `https://sahuaaradhy756-gif.github.io/test-2/?id=${passID}`;
+        // Correct GitHub Pages link for your final repo
+        const url = `https://sahuaaradhy756-gif.github.io/QRgeneratorFinal/view.html?id=${passID}`;
         const qrDataURL = await QRCode.toDataURL(url);
 
         qrImg.src = qrDataURL;
         qrImg.style.display = 'block';
-        statusText.innerHTML = `Pass Issued!<br><strong>Pass ID:</strong> ${passID}<br><small>Document ID: ${docRef.id}</small>`;
+        statusText.innerHTML = `Pass Issued!<br><strong>Pass ID:</strong> ${passID}<br><a href="${url}" target="_blank">Open View Link</a><br><small>Document ID: ${docRef.id}</small>`;
       } catch (err) {
         console.error(err);
         alert('Error generating pass: ' + err.message);
