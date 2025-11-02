@@ -6,7 +6,7 @@
   <title>View Event Pass</title>
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js';
-    import { getFirestore, collection, query, where, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
+    import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyCCOr_w3_yZOX_gqpn11GBQxf87RdlXi6Q",
@@ -21,29 +21,31 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function loadPass(id) {
+    async function loadPass(passID) {
       const container = document.getElementById('passInfo');
-      container.innerHTML = '<p>Loading pass details...</p>';
+
+      if (!passID) {
+        container.innerHTML = '<p style="color:red">No pass ID provided.</p>';
+        return;
+      }
 
       try {
-        // Try to find pass by passID field (not document id)
-        const q = query(collection(db, 'passes'), where('passID', '==', id));
+        const q = query(collection(db, 'passes'), where('passID', '==', passID));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          container.innerHTML = '<p style="color:red">No pass found with this ID.</p>';
+          container.innerHTML = '<p style="color:red">Invalid or deleted pass.</p>';
           return;
         }
 
         const data = querySnapshot.docs[0].data();
-        const date = data.purchaseDate || 'Unknown';
 
         container.innerHTML = `
           <div class="pass-card">
-            <h2>🎟️ Event Pass</h2>
+            <h2>🎟️ Verified Event Pass</h2>
             <p><strong>Pass ID:</strong> ${data.passID}</p>
-            <p><strong>Owner:</strong> ${data.ownerName}</p>
-            <p><strong>Purchase Date:</strong> ${date}</p>
+            <p><strong>Pass Owner:</strong> ${data.ownerName}</p>
+            <p><strong>Purchase Date:</strong> ${data.purchaseDate}</p>
             <p><strong>Status:</strong> ${data.valid ? '<span style="color:green">Valid</span>' : '<span style="color:red">Invalid</span>'}</p>
           </div>
         `;
@@ -55,82 +57,80 @@
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
-      const container = document.getElementById('passInfo');
-      const inputContainer = document.getElementById('manualEntry');
 
       if (id) {
-        inputContainer.style.display = 'none';
         loadPass(id);
       } else {
-        container.innerHTML = '';
-        inputContainer.style.display = 'block';
+        document.getElementById('manualEntry').style.display = 'block';
       }
+    });
 
-      document.getElementById('fetchBtn').addEventListener('click', () => {
-        const manualId = document.getElementById('passIdInput').value.trim();
-        if (!manualId) return alert('Please enter a Pass ID');
-        loadPass(manualId);
-      });
+    document.getElementById('fetchBtn').addEventListener('click', () => {
+      const inputId = document.getElementById('inputPassId').value.trim();
+      loadPass(inputId);
     });
   </script>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #e3f2fd, #f1f8e9);
+      background: linear-gradient(135deg, #f0f2f5, #e3f2fd);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
+      height: 100vh;
+      margin: 0;
     }
     .pass-card {
       background: white;
       padding: 24px;
       border-radius: 16px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
       max-width: 360px;
       text-align: center;
-      animation: fadeIn 0.4s ease-in-out;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
     h2 {
       margin-bottom: 10px;
+      color: #333;
     }
     #manualEntry {
       display: none;
       text-align: center;
-      margin-bottom: 20px;
+      margin-top: 20px;
     }
     input {
-      padding: 10px;
-      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 16px;
       border-radius: 8px;
-      width: 200px;
+      border: 1px solid #ccc;
+      margin: 8px 0;
+      width: 250px;
     }
     button {
-      padding: 10px 14px;
-      margin-left: 8px;
+      padding: 10px 16px;
       background: #007bff;
       color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      font-size: 16px;
     }
     button:hover {
       background: #0056b3;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
   </style>
 </head>
 <body>
+  <div id="passInfo">Loading pass details...</div>
   <div id="manualEntry">
-    <h2>🔍 Find Your Pass</h2>
-    <input id="passIdInput" type="text" placeholder="Enter Pass ID" />
+    <h2>Enter Your Pass ID</h2>
+    <input type="text" id="inputPassId" placeholder="e.g. AW6EXA" />
     <button id="fetchBtn">View Pass</button>
   </div>
-  <div id="passInfo"></div>
 </body>
 </html>
