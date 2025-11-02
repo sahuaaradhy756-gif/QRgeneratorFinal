@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View Event Pass</title>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js';
+    import { getFirestore, collection, query, where, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCCOr_w3_yZOX_gqpn11GBQxf87RdlXi6Q",
+      authDomain: "qr-generator-94762.firebaseapp.com",
+      projectId: "qr-generator-94762",
+      storageBucket: "qr-generator-94762.firebasestorage.app",
+      messagingSenderId: "338276752797",
+      appId: "1:338276752797:web:cf9ff57a4ca4b20bc06374",
+      measurementId: "G-RGQ9P6EZF2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadPass(id) {
+      const container = document.getElementById('passInfo');
+      container.innerHTML = '<p>Loading pass details...</p>';
+
+      try {
+        // Try to find pass by passID field (not document id)
+        const q = query(collection(db, 'passes'), where('passID', '==', id));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          container.innerHTML = '<p style="color:red">No pass found with this ID.</p>';
+          return;
+        }
+
+        const data = querySnapshot.docs[0].data();
+        const date = data.purchaseDate || 'Unknown';
+
+        container.innerHTML = `
+          <div class="pass-card">
+            <h2>🎟️ Event Pass</h2>
+            <p><strong>Pass ID:</strong> ${data.passID}</p>
+            <p><strong>Owner:</strong> ${data.ownerName}</p>
+            <p><strong>Purchase Date:</strong> ${date}</p>
+            <p><strong>Status:</strong> ${data.valid ? '<span style="color:green">Valid</span>' : '<span style="color:red">Invalid</span>'}</p>
+          </div>
+        `;
+      } catch (err) {
+        container.innerHTML = `<p style='color:red'>Error loading pass: ${err.message}</p>`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const container = document.getElementById('passInfo');
+      const inputContainer = document.getElementById('manualEntry');
+
+      if (id) {
+        inputContainer.style.display = 'none';
+        loadPass(id);
+      } else {
+        container.innerHTML = '';
+        inputContainer.style.display = 'block';
+      }
+
+      document.getElementById('fetchBtn').addEventListener('click', () => {
+        const manualId = document.getElementById('passIdInput').value.trim();
+        if (!manualId) return alert('Please enter a Pass ID');
+        loadPass(manualId);
+      });
+    });
+  </script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #e3f2fd, #f1f8e9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .pass-card {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      max-width: 360px;
+      text-align: center;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    #manualEntry {
+      display: none;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      width: 200px;
+    }
+    button {
+      padding: 10px 14px;
+      margin-left: 8px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="manualEntry">
+    <h2>🔍 Find Your Pass</h2>
+    <input id="passIdInput" type="text" placeholder="Enter Pass ID" />
+    <button id="fetchBtn">View Pass</button>
+  </div>
+  <div id="passInfo"></div>
+</body>
+</html>
